@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 // String de conexão (em produção, use variáveis de ambiente .env)
-const uri = "mongodb://localhost:27017/seu_banco_de_dados";
+const uri = "mongodb://localhost:27017/pittapong-db";
 
 const conectarDB = async () => {
     try {
