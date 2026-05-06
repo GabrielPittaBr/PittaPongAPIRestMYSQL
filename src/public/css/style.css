@@ -447,13 +447,16 @@ body {
     border-radius: 8px;
 }
 
+.btn-cadastrar-produto,
 .btn-prosseguir,
 .btn-finalizar {
     background-color: var(--vermelho-principal);
     transition: background-color 0.2s;
     border-radius: 8px;
+    border: none;
 }
 
+.btn-cadastrar-produto:hover,
 .btn-prosseguir:hover,
 .btn-finalizar:hover {
     background-color: var(--vermelho-escuro);

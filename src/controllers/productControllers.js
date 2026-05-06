@@ -50,7 +50,8 @@ exports.criarProduto = async (req, res) => {
       nome: req.body.nome,
       preco: req.body.preco,
       descricao: req.body.descricao,
-      imagens: urls
+      imagens: urls,
+      usuario: req.userId
     });
 
     await produto.save();
@@ -59,5 +60,42 @@ exports.criarProduto = async (req, res) => {
     res.redirect('/vender?sucesso=true');
   } catch (err) {
     res.redirect(`/vender?erro=${encodeURIComponent(err.message)}`);
+  }
+};
+
+exports.atualizarProduto = async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id);
+
+    if (!produto)
+      return res.status(404).json({ msg: 'Produto não encontrado' });
+
+    if (produto.usuario.toString() !== req.userId)
+      return res.status(403).json({ msg: 'Acesso negado' });
+
+    Object.assign(produto, req.body);
+    await produto.save();
+
+    res.json(produto);
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
+};
+
+exports.deletarProduto = async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id);
+
+    if (!produto)
+      return res.status(404).json({ msg: 'Produto não encontrado' });
+
+    if (produto.usuario.toString() !== req.userId)
+      return res.status(403).json({ msg: 'Acesso negado' });
+
+    await produto.deleteOne();
+
+    res.json({ msg: 'Produto deletado' });
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
   }
 };
