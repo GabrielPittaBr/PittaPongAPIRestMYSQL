@@ -21,11 +21,22 @@
             <div class="col-lg-6">
                 <h1 class="produto-titulo"><%= produto.nome %></h1>
                 <p class="produto-preco mb-4">R$ <%= produto.preco.toFixed(2).replace('.', ',') %></p>
-                <p class="produto-descricao mb-5">
+                <p class="produto-descricao mb-4">
                     <%= produto.descricao %>
                 </p>
+                <% if (produto.usuario && produto.usuario.nome) { %>
+                    <p class="produto-vendedor mb-4" style="color: #666; font-size: 0.95rem;">
+                        <i class="fa-solid fa-user me-1"></i> Vendido por: <strong><%= produto.usuario.nome %></strong>
+                    </p>
+                <% } %>
                 <button class="btn btn-comprar w-100 w-lg-75" onclick="window.location.href='/carrinho'">Adicionar
                     ao carrinho</button>
+
+                <% if (typeof user !== 'undefined' && user && produto.usuario && user._id.toString() === produto.usuario._id.toString()) { %>
+                    <a href="/editar-produto/<%= produto._id %>" class="btn btn-editar-produto w-100 w-lg-75 mt-3">
+                        <i class="fa-solid fa-pen-to-square me-2"></i>Editar produto
+                    </a>
+                <% } %>
             </div>
         </div>
         <% } else { %>

@@ -42,7 +42,34 @@
                         <div class="carrinho-login d-flex align-items-center gap-3">
                             <a href="/vender"><i class="fa-solid fa-dollar-sign"></i></a>
                             <a href="/carrinho"><i class="fa-solid fa-cart-shopping"></i></a>
-                            <a href="/login"><i class="fa-solid fa-user"></i></a>
+
+                            <% if (typeof user !== 'undefined' && user) { %>
+                                <!-- Se o usuário estiver logado mostra esse dropdown -->
+                                <div class="dropdown">
+                                    <button type="button" class="btn user-menu-toggle d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fa-solid fa-user-check"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="userDropdown">
+                                        <li class="dropdown-item-text user-info-item">
+                                            <div class="user-info-card">
+                                                <i class="fa-solid fa-circle-user user-avatar-icon"></i>
+                                                <div>
+                                                    <strong class="d-block"><%= user.nome %></strong>
+                                                    <small class="text-muted"><%= user.email %></small>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger fw-semibold" href="/usuario/logout">
+                                                <i class="fa-solid fa-right-from-bracket me-2 text-black"></i>Sair
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            <% } else { %>
+                                <a href="/login"><i class="fa-solid fa-user"></i></a>
+                            <% } %>
                         </div>
                     </div>
                 </div>

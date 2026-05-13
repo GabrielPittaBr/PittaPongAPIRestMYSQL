@@ -11,6 +11,9 @@ router.get('/', produtoController.listarProdutos);
 // POST /produtos - criar produto (até 5 imagens)
 router.post('/', authMiddleware, upload.array('imagens', 5), produtoController.criarProduto);
 
+// POST /produtos/:id/editar - editar produto via formulário (até 5 imagens)
+router.post('/:id/editar', authMiddleware, upload.array('imagens', 5), produtoController.editarProdutoForm);
+
 router.put('/:id', authMiddleware, produtoController.atualizarProduto);
 
 router.delete('/:id', authMiddleware, produtoController.deletarProduto);

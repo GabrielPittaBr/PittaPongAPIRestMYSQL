@@ -63,6 +63,40 @@ exports.criarProduto = async (req, res) => {
   }
 };
 
+// POST /produtos/:id/editar - editar produto via formulário
+exports.editarProdutoForm = async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id);
+
+    if (!produto)
+      return res.redirect(`/editar-produto/${req.params.id}?erro=${encodeURIComponent('Produto não encontrado')}`);
+
+    if (produto.usuario.toString() !== req.userId)
+      return res.redirect(`/editar-produto/${req.params.id}?erro=${encodeURIComponent('Acesso negado')}`);
+
+    // Update fields
+    produto.nome = req.body.nome || produto.nome;
+    produto.preco = req.body.preco || produto.preco;
+    produto.descricao = req.body.descricao || produto.descricao;
+
+    // If new images were uploaded, replace the old ones
+    if (req.files && req.files.length > 0) {
+      const urls = [];
+      for (const file of req.files) {
+        const result = await uploadToCloudinary(file.buffer);
+        urls.push(result.secure_url);
+      }
+      produto.imagens = urls;
+    }
+
+    await produto.save();
+
+    res.redirect(`/editar-produto/${produto._id}?sucesso=true`);
+  } catch (err) {
+    res.redirect(`/editar-produto/${req.params.id}?erro=${encodeURIComponent(err.message)}`);
+  }
+};
+
 exports.atualizarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);

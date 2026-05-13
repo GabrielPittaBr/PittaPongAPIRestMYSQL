@@ -543,6 +543,112 @@ body {
     font-weight: 600;
 }
 
+/* ===== USER DROPDOWN (Header) ===== */
+
+.user-menu-toggle {
+    text-decoration: none;
+    color: white !important;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.user-menu-toggle i {
+    font-size: 2em;
+    color: white;
+    transition: all 0.2s;
+}
+
+.user-menu-toggle i:hover {
+    color: #757575;
+    transform: scale(1.1);
+}
+
+.user-menu-toggle::after {
+    display: none; /* hide default Bootstrap caret */
+}
+
+.user-dropdown {
+    min-width: 280px;
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+    animation: fadeInDown 0.2s ease;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.user-info-item {
+    padding: 1rem 1.2rem;
+}
+
+.user-info-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-avatar-icon {
+    font-size: 2.5rem;
+    color: var(--vermelho-principal);
+}
+
+.user-dropdown .dropdown-item {
+    padding: 0.6rem 1.2rem;
+    transition: background-color 0.15s;
+}
+
+.user-dropdown .dropdown-item:hover {
+    background-color: #fef2f2;
+}
+
+/* ===== EDIT PRODUCT BUTTON ===== */
+
+.btn-editar-produto {
+    background-color: transparent;
+    border: 2px solid var(--vermelho-principal);
+    color: var(--vermelho-principal);
+    border-radius: 15px;
+    padding: 14px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-editar-produto:hover {
+    background-color: var(--vermelho-principal);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(232, 32, 35, 0.25);
+}
+
+/* ===== EDIT PAGE IMAGE THUMBS ===== */
+
+.edit-img-thumb {
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #e0e0e0;
+    background-color: var(--cinza-fundo-item);
+}
+
+.edit-img-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+
 /* ===== ORDER TRACKING (ACOMPANHAMENTO) ===== */
 
 .progress-tracker ul {

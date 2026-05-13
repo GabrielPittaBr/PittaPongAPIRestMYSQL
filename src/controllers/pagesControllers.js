@@ -23,7 +23,7 @@ exports.getListarProdutos = async (req, res) => {
 exports.getProdutoDetalhe = async (req, res) => {
     try {
         const id = req.params.id;
-        const produto = await Produto.findById(id);
+        const produto = await Produto.findById(id).populate('usuario', 'nome');
 
         if (!produto) {
             return res.status(404).send("Produto não encontrado");
@@ -68,9 +68,39 @@ exports.getAcompanhamento = async (req, res) => {
 };
 
 exports.getLogin = (req, res) => {
-    res.render('usuario/login', { title: 'PittaPong - Login' });
+    const erro = req.query.erro || null;
+    res.render('usuario/login', { title: 'PittaPong - Login', erro });
 };
 
 exports.getCadastro = (req, res) => {
-    res.render('usuario/cadastro', { title: 'PittaPong - Cadastro' });
+    const erro = req.query.erro || null;
+    res.render('usuario/cadastro', { title: 'PittaPong - Cadastro', erro });
+};
+
+exports.getEditarProduto = async (req, res) => {
+    try {
+        const produto = await Produto.findById(req.params.id);
+
+        if (!produto) {
+            return res.status(404).send("Produto não encontrado");
+        }
+
+        // Only allow the owner to access the edit page
+        if (!req.userId || produto.usuario.toString() !== req.userId) {
+            return res.status(403).send("Acesso negado");
+        }
+
+        const sucesso = req.query.sucesso === 'true';
+        const erro = req.query.erro || null;
+
+        res.render('venda/editar-produto', {
+            title: `PittaPong - Editar ${produto.nome}`,
+            produto,
+            sucesso,
+            erro
+        });
+    } catch (err) {
+        console.error('Erro getEditarProduto:', err.message);
+        res.status(500).send("Erro ao carregar a página de edição");
+    }
 };
