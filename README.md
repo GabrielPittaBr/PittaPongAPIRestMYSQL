@@ -1,76 +1,252 @@
-# PittaPong2.0
+# PittaPong API REST
 
-Versão atualizada e funcional do meu antigo trabalho, PittaPong, um site e-commerce de artigos esportivos de tênis de mesa. Trabalho: Desenvolvimento de API REST Escalável com Node.js e MongoDB. O projeto consiste em um Catálogo de Produtos com atributos dinâmicos, contando com sistema de autenticação, persistência de dados em banco NoSQL (MongoDB) e upload de imagens (Cloudinary).
+API REST para e-commerce de artigos esportivos de tênis de mesa.
 
-## Tecnologias Utilizadas
-- **Node.js** & **Express**
-- **MongoDB** & **Mongoose** (Persistência NoSQL)
-- **EJS** (View Engine)
-- **Cloudinary** (Armazenamento de imagens)
-- **Bcrypt** (Criptografia de senhas)
-- **JSON Web Token (JWT)** (Autenticação)
-- **Bootstrap 5** (Estilização responsiva)
+Desenvolvida com **Node.js**, **Express**, **MongoDB** e autenticação via **JWT (JSON Web Token)**.
 
-## Como Rodar o Projeto Localmente
+---
 
-### 1. Pré-requisitos
-- [Node.js](https://nodejs.org/) instalado.
-- Banco de dados MongoDB em execução (pode ser local ou via cluster online no [MongoDB Atlas](https://www.mongodb.com/atlas/database)).
-- Conta no [Cloudinary](https://cloudinary.com/) (para habilitar o upload e gerenciamento de imagens dos produtos).
+## Tecnologias
 
-### 2. Clonar o Repositório
+- **Node.js** + **Express 5**
+- **MongoDB** + **Mongoose**
+- **JWT** para autenticação
+- **Cloudinary** para upload de imagens
+- **Multer** para processamento de arquivos
+- **Bcrypt** para hash de senhas
+
+---
+
+## Instalação
+
 ```bash
-git clone https://github.com/GabrielPittaBr/PittaPong2.0.git
-cd PittaPong2.0
-```
+# Clonar o repositório
+git clone https://github.com/GabrielPittaBr/PittaPongAPIrest.git
+cd PittaPongAPIrest
 
-### 3. Instalar Dependências
-```bash
+# Instalar dependências
 npm install
+
+# Configurar variáveis de ambiente
+# Copie o arquivo .env_exemplo para .env e preencha com seus dados
+cp .env_exemplo .env
 ```
 
-### 4. Configurar Variáveis de Ambiente
-O projeto requer algumas variáveis de ambiente para realizar conexões com o banco e serviços externos.
-Existe um arquivo chamado `.env-exemplo` na raiz do repositório. Crie um arquivo com o nome `.env` e preencha as variáveis com suas credenciais:
+### Variáveis de ambiente (`.env`)
 
-```env
-PORT = 3000
-MONGO_URI = sua_string_do_mogodb
-CLOUD_NAME = seu_cloud_name_cloudinary
-API_KEY = sua_api_key_cloudinary
-API_SECRET = seu_api_secret_cloudinary
-JWT_SECRET = sua_jwt_secret
+```
+PORT=3000
+MONGO_URI=sua_string_do_mongodb
+CLOUD_NAME=seu_cloud_name_cloudinary
+API_KEY=sua_api_key_cloudinary
+API_SECRET=seu_api_secret_cloudinary
+JWT_SECRET=sua_jwt_secret
 ```
 
-### 5. Popular o Banco de Dados com Dados Iniciais (Opcional)
-Para iniciar a aplicação com alguns produtos de exemplo já cadastrados, você pode rodar o script de seed. (Verifique se sua variável `MONGO_URI` já está corretamente configurada).
+---
+
+## Executar
+
 ```bash
-node src/seed.js
+# Iniciar o servidor
+npm start
+
+# Popular o banco com dados de exemplo
+npm run seed
 ```
 
-### 6. Iniciar o Servidor
-Para rodar a aplicação, execute o comando:
-```bash
-node src/app.js
+---
+
+## Autenticação
+
+A API utiliza **Bearer Token (JWT)** para proteger rotas.
+
+### Fluxo:
+
+1. **Registre-se** ou **faça login** via POST
+2. Copie o `token` retornado na resposta
+3. Em todas as requisições protegidas, adicione o header:
+
+```
+Authorization: Bearer <seu_token_aqui>
 ```
 
-Acesse o projeto em seu navegador: [http://localhost:3000](http://localhost:3000)
+---
 
-## Endpoints da API
+## Endpoints
+
+### Usuário
+
+| Método | Rota                | Auth | Descrição                              |
+| ------ | ------------------- | ---- | -------------------------------------- |
+| POST   | `/usuario/cadastro` | ❌   | Registrar novo usuário                 |
+| POST   | `/usuario/login`    | ❌   | Login — retorna token JWT              |
+| POST   | `/usuario/logout`   | ❌   | Logout (simbólico em API stateless)    |
 
 ### Produtos
-- `GET /produtos` - Retorna a lista de todos os produtos cadastrados em formato JSON.
-- `POST /produtos` - Cria um novo produto no catálogo (Requer autenticação e suporta upload de até 5 imagens).
-- `PUT /produtos/:id` - Atualiza as informações de um produto específico (Requer autenticação e validação de dono do produto).
-- `DELETE /produtos/:id` - Deleta um produto específico do catálogo (Requer autenticação e validação de dono do produto).
-- `POST /produtos/:id/editar` - Endpoint específico para edição de produto via formulário web (suporta envio de novas imagens).
 
-### Usuários (Autenticação)
-- `POST /usuario/cadastrar` - Registra um novo usuário no sistema. As senhas são protegidas e armazenadas usando criptografia BCrypt.
-- `POST /usuario/login` - Autentica um usuário existente e gera um token JWT armazenado em um cookie de sessão httpOnly.
-- `GET /usuario/logout` - Encerra a sessão atual do usuário, invalidando/limpando o cookie JWT.
+| Método | Rota              | Auth | Descrição                                      |
+| ------ | ----------------- | ---- | ---------------------------------------------- |
+| GET    | `/produtos`       | ❌   | Listar todos (filtro opcional: `?categoria=`)  |
+| GET    | `/produtos/:id`   | ❌   | Obter produto por ID                           |
+| POST   | `/produtos`       | ✅   | Criar produto (multipart com imagens)          |
+| PUT    | `/produtos/:id`   | ✅   | Atualizar produto por completo (com imagens)   |
+| PATCH  | `/produtos/:id`   | ✅   | Atualizar produto parcialmente (JSON body)     |
+| DELETE | `/produtos/:id`   | ✅   | Deletar produto                                |
 
-## Governança e Boas Práticas
-- **Arquitetura MVC:** O código fonte segue rigorosamente a separação de responsabilidades (Models, Views e Controllers) localizada no diretório `/src`.
-- **Prevenção contra Injeção de Código:** Mongoose é utilizado para schema validation e proteção nativa contra ataques de NoSQL Injection, garantindo tipagem estrita de todos os dados salvos no banco.
-- **GitFlow:** O ciclo de desenvolvimento adota a estratégia de ramificação, contendo `main` para código de produção estável, `develop` como ambiente central de integração, e `feature/*` branches para a criação isolada de novas tarefas.
+---
+
+## Exemplos de Uso (Talend API / Postman)
+
+### 1. Registrar usuário
+
+```
+POST /usuario/cadastro
+Content-Type: application/json
+
+{
+  "nome": "Gabriel",
+  "email": "gabriel@email.com",
+  "senha": "minhaSenha123"
+}
+```
+
+**Resposta (201):**
+```json
+{
+  "msg": "Usuário cadastrado com sucesso",
+  "usuario": {
+    "id": "664...",
+    "nome": "Gabriel",
+    "email": "gabriel@email.com"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+### 2. Login
+
+```
+POST /usuario/login
+Content-Type: application/json
+
+{
+  "email": "gabriel@email.com",
+  "senha": "minhaSenha123"
+}
+```
+
+**Resposta (200):**
+```json
+{
+  "msg": "Login realizado com sucesso",
+  "usuario": {
+    "id": "664...",
+    "nome": "Gabriel",
+    "email": "gabriel@email.com"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+### 3. Criar produto (autenticado)
+
+```
+POST /produtos
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+Content-Type: multipart/form-data
+
+nome: Raquete Pro
+preco: 199.99
+descricao: Raquete profissional de alta qualidade
+categoria: Raquetes
+imagens: [arquivo1.jpg, arquivo2.jpg]
+```
+
+### 4. Listar produtos
+
+```
+GET /produtos
+GET /produtos?categoria=Raquetes
+```
+
+### 5. Obter produto por ID
+
+```
+GET /produtos/664abc123def456...
+```
+
+### 6. Atualizar produto (PUT - completo)
+
+```
+PUT /produtos/664abc123def456...
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+Content-Type: multipart/form-data
+
+nome: Raquete Pro V2
+preco: 249.99
+descricao: Versão atualizada da raquete profissional
+categoria: Raquetes
+```
+
+### 7. Atualizar produto (PATCH - parcial)
+
+```
+PATCH /produtos/664abc123def456...
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+Content-Type: application/json
+
+{
+  "preco": 189.99
+}
+```
+
+### 8. Deletar produto
+
+```
+DELETE /produtos/664abc123def456...
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+```
+
+---
+
+## Categorias Disponíveis
+
+- `Raquetes`
+- `Bolinhas`
+- `Redes`
+- `Acessórios`
+- `Outros`
+
+---
+
+## Modelo de Dados
+
+### Usuário
+
+```json
+{
+  "nome": "String (obrigatório)",
+  "email": "String (obrigatório, único)",
+  "senha": "String (obrigatório, hash bcrypt)"
+}
+```
+
+### Produto
+
+```json
+{
+  "usuario": "ObjectId (ref: Usuario, obrigatório)",
+  "nome": "String (obrigatório, max: 80)",
+  "preco": "Number (obrigatório)",
+  "descricao": "String (obrigatório, max: 200)",
+  "categoria": "String (enum: Raquetes|Bolinhas|Redes|Acessórios|Outros)",
+  "imagens": ["String (URLs do Cloudinary)"]
+}
+```
+
+---
+
+## Autor
+
+**Gabriel Fernandes Pitta** - [GitHub](https://github.com/GabrielPittaBr)

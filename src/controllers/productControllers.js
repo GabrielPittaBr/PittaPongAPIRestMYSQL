@@ -2,7 +2,7 @@ const Produto = require('../models/productModels');
 const cloudinary = require('../config/cloudinary');
 const streamifier = require('streamifier');
 
-// função pra enviar pro cloudinary
+// Função para enviar imagem ao Cloudinary
 const uploadToCloudinary = (buffer) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -16,24 +16,34 @@ const uploadToCloudinary = (buffer) => {
   });
 };
 
-// GET /produtos - listar todos
+// GET /produtos - listar todos (com filtro opcional por categoria)
 exports.listarProdutos = async (req, res) => {
   try {
-    const produtos = await Produto.find().sort({ createdAt: -1 });
+    const categoriaFiltro = req.query.categoria || null;
+    const query = categoriaFiltro ? { categoria: categoriaFiltro } : {};
+    const produtos = await Produto.find(query).sort({ createdAt: -1 });
     res.json(produtos);
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }
 };
 
-// GET /vender - renderizar formulário
-exports.getVender = (req, res) => {
-  const sucesso = req.query.sucesso === 'true';
-  const erro = req.query.erro || null;
-  res.render('venda/vender', { title: 'PittaPong - Vender', sucesso, erro });
+// GET /produtos/:id - obter um produto pelo ID
+exports.obterProduto = async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id).populate('usuario', 'nome email');
+
+    if (!produto) {
+      return res.status(404).json({ msg: 'Produto não encontrado' });
+    }
+
+    res.json(produto);
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 };
 
-// POST /produtos - criar produto
+// POST /produtos - criar produto (requer autenticação)
 exports.criarProduto = async (req, res) => {
   try {
     const urls = [];
@@ -57,31 +67,33 @@ exports.criarProduto = async (req, res) => {
 
     await produto.save();
 
-    // Redireciona de volta ao formulário com mensagem de sucesso
-    res.redirect('/vender?sucesso=true');
+    res.status(201).json({
+      msg: 'Produto criado com sucesso',
+      produto
+    });
   } catch (err) {
-    res.redirect(`/vender?erro=${encodeURIComponent(err.message)}`);
+    res.status(500).json({ erro: err.message });
   }
 };
 
-// POST /produtos/:id/editar - editar produto via formulário
-exports.editarProdutoForm = async (req, res) => {
+// PUT /produtos/:id - atualizar produto por completo (requer autenticação)
+exports.atualizarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
 
     if (!produto)
-      return res.redirect(`/editar-produto/${req.params.id}?erro=${encodeURIComponent('Produto não encontrado')}`);
+      return res.status(404).json({ msg: 'Produto não encontrado' });
 
     if (produto.usuario.toString() !== req.userId)
-      return res.redirect(`/editar-produto/${req.params.id}?erro=${encodeURIComponent('Acesso negado')}`);
+      return res.status(403).json({ msg: 'Acesso negado' });
 
-    // Update fields
+    // Atualizar campos
     produto.nome = req.body.nome || produto.nome;
     produto.preco = req.body.preco || produto.preco;
     produto.descricao = req.body.descricao || produto.descricao;
     produto.categoria = req.body.categoria || produto.categoria;
 
-    // If new images were uploaded, replace the old ones
+    // Se novas imagens foram enviadas, substituir as antigas
     if (req.files && req.files.length > 0) {
       const urls = [];
       for (const file of req.files) {
@@ -93,13 +105,17 @@ exports.editarProdutoForm = async (req, res) => {
 
     await produto.save();
 
-    res.redirect(`/editar-produto/${produto._id}?sucesso=true`);
+    res.json({
+      msg: 'Produto atualizado com sucesso',
+      produto
+    });
   } catch (err) {
-    res.redirect(`/editar-produto/${req.params.id}?erro=${encodeURIComponent(err.message)}`);
+    res.status(500).json({ erro: err.message });
   }
 };
 
-exports.atualizarProduto = async (req, res) => {
+// PATCH /produtos/:id - atualizar parcialmente um produto (requer autenticação)
+exports.atualizarParcialProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
 
@@ -109,15 +125,26 @@ exports.atualizarProduto = async (req, res) => {
     if (produto.usuario.toString() !== req.userId)
       return res.status(403).json({ msg: 'Acesso negado' });
 
-    Object.assign(produto, req.body);
+    // Atualizar somente os campos enviados no body
+    const camposPermitidos = ['nome', 'preco', 'descricao', 'categoria', 'imagens'];
+    camposPermitidos.forEach((campo) => {
+      if (req.body[campo] !== undefined) {
+        produto[campo] = req.body[campo];
+      }
+    });
+
     await produto.save();
 
-    res.json(produto);
+    res.json({
+      msg: 'Produto atualizado parcialmente com sucesso',
+      produto
+    });
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }
 };
 
+// DELETE /produtos/:id - deletar produto (requer autenticação)
 exports.deletarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
@@ -130,7 +157,7 @@ exports.deletarProduto = async (req, res) => {
 
     await produto.deleteOne();
 
-    res.json({ msg: 'Produto deletado' });
+    res.json({ msg: 'Produto deletado com sucesso' });
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }

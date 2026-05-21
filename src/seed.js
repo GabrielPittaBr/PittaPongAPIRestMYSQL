@@ -10,14 +10,14 @@ const produtos = [
     preco: 229.99,
     descricao: 'Desbloqueie seu verdadeiro potencial com essa mega raquete. Usada pelo profissional Oldenburg no Torneio 20x CIMOL.',
     categoria: 'Raquetes',
-    imagens: ['/img/Olden Racket.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027335/OldenRacket2.png', '/img/Olden Racket.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027335/OldenRacket2.png']
+    imagens: ['https://res.cloudinary.com/do3wgxuwp/image/upload/v1778026836/Olden_Racket_rddrg1.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027335/OldenRacket2.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778026836/Olden_Racket_rddrg1.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027335/OldenRacket2.png']
   },
   {
     nome: 'Roiesk Balls',
     preco: 39.99,
     descricao: 'Bolinhas de tênis de mesa profissionais da Roiesk. Perfeitas para treino e competição, com qualidade e durabilidade garantidas.',
     categoria: 'Bolinhas',
-    imagens: ['/img/Roiesk Balls.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027360/RoieskBall2.png', '/img/Roiesk Balls.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027360/RoieskBall2.png']
+    imagens: ['https://res.cloudinary.com/do3wgxuwp/image/upload/v1778026852/Roiesk_Balls_g0q7t7.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027360/RoieskBall2.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778026852/Roiesk_Balls_g0q7t7.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027360/RoieskBall2.png']
   }
 ];
 
