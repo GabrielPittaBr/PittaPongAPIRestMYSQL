@@ -1,4 +1,4 @@
-# PittaPong REST API 🏓
+# PittaPong API REST
 
 API REST para e-commerce de artigos esportivos de tênis de mesa.
 
