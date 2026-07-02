@@ -48,10 +48,10 @@ const options = {
         // Usuário / Autenticação
         CadastroInput: {
           type: 'object',
-          required: ['nome', 'email', 'senha'],
+          required: ['nome', 'nick', 'senha'],
           properties: {
-            nome: { type: 'string', example: 'Gabriel Pitta' },
-            email: { type: 'string', format: 'email', example: 'gabriel@example.com' },
+            nome: { type: 'string', maxLength: 45, example: 'Gabriel Pitta' },
+            nick: { type: 'string', maxLength: 15, example: 'gpitta' },
             senha: {
               type: 'string',
               format: 'password',
@@ -62,10 +62,10 @@ const options = {
         },
         LoginInput: {
           type: 'object',
-          required: ['email', 'senha'],
+          required: ['nick', 'senha'],
           properties: {
-            email: { type: 'string', format: 'email', example: 'gabriel@example.com' },
-            senha: { type: 'string', format: 'password', example: 'minhasenha123' },
+            nick: { type: 'string', maxLength: 15, example: 'pittapong' },
+            senha: { type: 'string', format: 'password', example: 'PittaPong123!' },
           },
         },
         UsuarioResponse: {
@@ -73,7 +73,7 @@ const options = {
           properties: {
             id: { type: 'integer', example: 1 },
             nome: { type: 'string', example: 'Gabriel Pitta' },
-            email: { type: 'string', example: 'gabriel@example.com' },
+            nick: { type: 'string', example: 'gpitta' },
           },
         },
         AuthResponse: {
