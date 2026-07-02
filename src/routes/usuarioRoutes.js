@@ -32,24 +32,24 @@ const authController = require('../controllers/authController');
  *               usuario:
  *                 id: 1
  *                 nome: Gabriel Pitta
- *                 email: gabriel@example.com
+ *                 nick: gpitta
  *               token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       400:
- *         description: Campos obrigatórios não preenchidos (nome, email ou senha ausentes).
+ *         description: Campos obrigatórios não preenchidos (nome, nick ou senha ausentes).
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErroResponse'
  *             example:
- *               msg: Preencha todos os campos (nome, email, senha)
+ *               msg: Preencha todos os campos (nome, nick, senha)
  *       409:
- *         description: Conflito — email já está cadastrado no sistema.
+ *         description: Conflito — nick já está cadastrado no sistema.
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErroResponse'
  *             example:
- *               msg: Email já cadastrado
+ *               msg: Nick já cadastrado
  *       500:
  *         description: Erro interno do servidor.
  *         content:
@@ -67,7 +67,7 @@ router.post('/cadastro', authController.register);
  *       - Autenticação
  *     summary: Autenticar usuário e obter token JWT
  *     description: >
- *       Valida as credenciais do usuário (email e senha) contra a tabela `usuarios`
+ *       Valida as credenciais do usuário (nick e senha) contra a tabela `usuarios`
  *       e retorna um **token JWT** válido por 1 dia. Copie o token e use o botão
  *       **Authorize** para autenticar as rotas protegidas.
  *     requestBody:
@@ -88,7 +88,7 @@ router.post('/cadastro', authController.register);
  *               usuario:
  *                 id: 1
  *                 nome: Gabriel Pitta
- *                 email: gabriel@example.com
+ *                 nick: gpitta
  *               token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       400:
  *         description: Email ou senha não informados.
@@ -97,7 +97,7 @@ router.post('/cadastro', authController.register);
  *             schema:
  *               $ref: '#/components/schemas/ErroResponse'
  *             example:
- *               msg: Preencha todos os campos (email, senha)
+ *               msg: Preencha todos os campos (nick, senha)
  *       401:
  *         description: Senha inválida.
  *         content:
@@ -107,7 +107,7 @@ router.post('/cadastro', authController.register);
  *             example:
  *               msg: Senha inválida
  *       404:
- *         description: Usuário não encontrado com o email informado.
+ *         description: Usuário não encontrado com o nick informado.
  *         content:
  *           application/json:
  *             schema:

@@ -9,26 +9,26 @@ const gerarToken = (id) =>
 // POST /usuario/cadastro - registrar novo usuario na base relacional
 exports.register = async (req, res) => {
   try {
-    const { nome, email, senha } = req.body;
+    const { nome, nick, senha } = req.body;
 
-    if (!nome || !email || !senha) {
-      return res.status(400).json({ msg: 'Preencha todos os campos (nome, email, senha)' });
+    if (!nome || !nick || !senha) {
+      return res.status(400).json({ msg: 'Preencha todos os campos (nome, nick, senha)' });
     }
 
-    const existe = await Usuario.buscarPorEmail(email);
+    const existe = await Usuario.buscarPorNick(nick);
     if (existe) {
-      return res.status(409).json({ msg: 'Email já cadastrado' });
+      return res.status(409).json({ msg: 'Nick já cadastrado' });
     }
 
     const hash = await bcrypt.hash(senha, 10);
-    const id = await Usuario.criar({ nome, email, senha: hash });
+    const id = await Usuario.criar({ nome, nick, senha: hash });
 
     // Gera token JWT para auto-login apos cadastro
     const token = gerarToken(id);
 
     res.status(201).json({
       msg: 'Usuário cadastrado com sucesso',
-      usuario: { id, nome, email },
+      usuario: { id, nome, nick },
       token,
     });
   } catch (err) {
@@ -39,13 +39,13 @@ exports.register = async (req, res) => {
 // POST /usuario/login - autenticar usuario e retornar token
 exports.login = async (req, res) => {
   try {
-    const { email, senha } = req.body;
+    const { nick, senha } = req.body;
 
-    if (!email || !senha) {
-      return res.status(400).json({ msg: 'Preencha todos os campos (email, senha)' });
+    if (!nick || !senha) {
+      return res.status(400).json({ msg: 'Preencha todos os campos (nick, senha)' });
     }
 
-    const usuario = await Usuario.buscarPorEmail(email);
+    const usuario = await Usuario.buscarPorNick(nick);
     if (!usuario) {
       return res.status(404).json({ msg: 'Usuário não encontrado' });
     }
@@ -62,7 +62,7 @@ exports.login = async (req, res) => {
       usuario: {
         id: usuario.id_usuario,
         nome: usuario.nome,
-        email: usuario.email,
+        nick: usuario.nick,
       },
       token,
     });
