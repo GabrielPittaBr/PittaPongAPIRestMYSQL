@@ -1,51 +1,69 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const Produto = require('./models/productModels');
-const Usuario = require('./models/userModels');
+const pool = require('./config/database');
+
+// Categorias e produtos de exemplo (o produto referencia a categoria pelo nome,
+// que é resolvido para o id durante o seed).
+const categorias = ['Raquetes', 'Bolinhas', 'Redes', 'Acessórios'];
 
 const produtos = [
-  {
-    nome: 'Olden Racket',
-    preco: 229.99,
-    descricao: 'Desbloqueie seu verdadeiro potencial com essa mega raquete. Usada pelo profissional Oldenburg no Torneio 20x CIMOL.',
-    categoria: 'Raquetes',
-    imagens: ['https://res.cloudinary.com/do3wgxuwp/image/upload/v1778026836/Olden_Racket_rddrg1.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027335/OldenRacket2.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778026836/Olden_Racket_rddrg1.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027335/OldenRacket2.png']
-  },
-  {
-    nome: 'Roiesk Balls',
-    preco: 39.99,
-    descricao: 'Bolinhas de tênis de mesa profissionais da Roiesk. Perfeitas para treino e competição, com qualidade e durabilidade garantidas.',
-    categoria: 'Bolinhas',
-    imagens: ['https://res.cloudinary.com/do3wgxuwp/image/upload/v1778026852/Roiesk_Balls_g0q7t7.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027360/RoieskBall2.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778026852/Roiesk_Balls_g0q7t7.png', 'https://res.cloudinary.com/do3wgxuwp/image/upload/v1778027360/RoieskBall2.png']
-  }
+  { nome: 'Olden Racket', valor: 229.99, estoque: 10, categoria: 'Raquetes' },
+  { nome: 'Roiesk Balls', valor: 39.99, estoque: 50, categoria: 'Bolinhas' },
 ];
+
+async function garantirCategoria(nome) {
+  const [existentes] = await pool.execute(
+    'SELECT id_categoria FROM categorias WHERE nome = ?',
+    [nome]
+  );
+  if (existentes.length > 0) return existentes[0].id_categoria;
+
+  const [resultado] = await pool.execute(
+    'INSERT INTO categorias (nome) VALUES (?)',
+    [nome]
+  );
+  console.log(`✅ Categoria criada: ${nome}`);
+  return resultado.insertId;
+}
 
 async function seed() {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('✅ Conectado ao MongoDB');
+    await pool.testarConexao();
 
-    let pittaPongUser = await Usuario.findOne({ email: 'pittapong@pittapong.com' });
-    if (!pittaPongUser) {
-      const hashedPassword = await bcrypt.hash('PittaPong123!', 10);
-      pittaPongUser = new Usuario({
-        nome: 'PittaPong',
-        email: 'pittapong@pittapong.com',
-        senha: hashedPassword
-      });
-      await pittaPongUser.save();
-      console.log('✅ Usuário PittaPong criado com sucesso');
+    // Usuário administrador para autenticação
+    const email = 'pittapong@pittapong.com';
+    const [usuarios] = await pool.execute(
+      'SELECT id_usuario FROM usuarios WHERE email = ?',
+      [email]
+    );
+    if (usuarios.length === 0) {
+      const hash = await bcrypt.hash('PittaPong123!', 10);
+      await pool.execute(
+        'INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)',
+        ['PittaPong', email, hash]
+      );
+      console.log('✅ Usuário PittaPong criado (login: pittapong@pittapong.com / PittaPong123!)');
     } else {
       console.log('ℹ️  Usuário PittaPong já existente');
     }
 
+    // Categorias
+    const idsCategorias = {};
+    for (const nome of categorias) {
+      idsCategorias[nome] = await garantirCategoria(nome);
+    }
+
+    // Produtos
     for (const dados of produtos) {
-      const existe = await Produto.findOne({ nome: dados.nome });
-      if (!existe) {
-        const dadosComUsuario = { ...dados, usuario: pittaPongUser._id };
-        const p = new Produto(dadosComUsuario);
-        await p.save();
+      const [existe] = await pool.execute(
+        'SELECT id_produto FROM produtos WHERE nome = ?',
+        [dados.nome]
+      );
+      if (existe.length === 0) {
+        await pool.execute(
+          'INSERT INTO produtos (nome, valor, estoque, categorias_id_categoria) VALUES (?, ?, ?, ?)',
+          [dados.nome, dados.valor, dados.estoque, idsCategorias[dados.categoria]]
+        );
         console.log(`✅ Produto criado: ${dados.nome}`);
       } else {
         console.log(`⚠️  Produto já existe: ${dados.nome}`);
@@ -54,8 +72,8 @@ async function seed() {
   } catch (err) {
     console.error('❌ Erro:', err.message);
   } finally {
-    await mongoose.disconnect();
-    console.log('🔌 Desconectado do MongoDB');
+    await pool.end();
+    console.log('🔌 Conexão com o MySQL encerrada');
   }
 }
 
