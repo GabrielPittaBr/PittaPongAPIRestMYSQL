@@ -2,18 +2,20 @@
 
 API REST para e-commerce de artigos esportivos de tênis de mesa.
 
-Desenvolvida com **Node.js**, **Express**, **MongoDB** e autenticação via **JWT (JSON Web Token)**.
+Desenvolvida com **Node.js**, **Express**, **MySQL** e autenticação via **JWT (JSON Web Token)**.
+
+> **Versão 2.0.0** — a camada de persistência foi migrada de **MongoDB** para um **SGBD relacional (MySQL)**,
+> com as entidades **categorias**, **produtos**, **clientes** e **pedidos**.
 
 ---
 
 ## Tecnologias
 
 - **Node.js** + **Express 5**
-- **MongoDB** + **Mongoose**
+- **MySQL 8** + driver **mysql2** (Promises/async-await)
 - **JWT** para autenticação
-- **Cloudinary** para upload de imagens
-- **Multer** para processamento de arquivos
 - **Bcrypt** para hash de senhas
+- **Swagger (swagger-jsdoc + swagger-ui-express)** para documentação
 
 ---
 
@@ -21,8 +23,8 @@ Desenvolvida com **Node.js**, **Express**, **MongoDB** e autenticação via **JW
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/GabrielPittaBr/PittaPongAPIrest.git
-cd PittaPongAPIrest
+git clone https://github.com/GabrielPittaBr/PittaPong2.0.git
+cd PittaPongAPIRESTMYSQL
 
 # Instalar dependências
 npm install
@@ -32,14 +34,27 @@ npm install
 cp .env_exemplo .env
 ```
 
+### Banco de dados
+
+Importe o script relacional (cria a base `pittapong` e todas as tabelas, incluindo `usuarios`):
+
+```bash
+mysql -u root -p < database/pittapong.sql
+```
+
 ### Variáveis de ambiente (`.env`)
 
 ```
 PORT=3000
-MONGO_URI=sua_string_do_mongodb
-CLOUD_NAME=seu_cloud_name_cloudinary
-API_KEY=sua_api_key_cloudinary
-API_SECRET=seu_api_secret_cloudinary
+
+# Banco de dados relacional MySQL (base pittapong)
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=sua_senha_mysql
+DB_NAME=pittapong
+
+# Autenticação JWT
 JWT_SECRET=sua_jwt_secret
 ```
 
@@ -51,19 +66,26 @@ JWT_SECRET=sua_jwt_secret
 # Iniciar o servidor
 npm start
 
-# Popular o banco com dados de exemplo
+# Popular o banco com dados de exemplo (usuário admin, categorias e produtos)
 npm run seed
 ```
 
+O seed cria um usuário para login:
+
+- **email:** `pittapong@pittapong.com`
+- **senha:** `PittaPong123!`
+
+Documentação interativa (Swagger UI): **http://localhost:3000/api-docs**
+
 ---
 
-## Autenticação
+## Autenticação e acesso estrito
 
-A API utiliza **Bearer Token (JWT)** para proteger rotas.
+A API utiliza **Bearer Token (JWT)** para proteger as rotas de CRUD.
 
-### Fluxo:
+### Fluxo
 
-1. **Registre-se** ou **faça login** via POST
+1. **Cadastre-se** (`POST /usuario/cadastro`) ou **faça login** (`POST /usuario/login`)
 2. Copie o `token` retornado na resposta
 3. Em todas as requisições protegidas, adicione o header:
 
@@ -71,68 +93,74 @@ A API utiliza **Bearer Token (JWT)** para proteger rotas.
 Authorization: Bearer <seu_token_aqui>
 ```
 
+### Regra de acesso estrito (requisito de segurança)
+
+Os endpoints de CRUD (categorias, produtos, clientes, pedidos) só são processados quando **todas** as
+condições abaixo são satisfeitas; caso contrário respondem **401 Unauthorized** ou **403 Forbidden**:
+
+1. Há um **token JWT válido**;
+2. O **id do usuário** está presente no payload do token (opcionalmente confirmado pelo header `x-user-id`);
+3. Esse usuário **existe** na tabela `usuarios`.
+
+> O header `x-user-id` é opcional. Se enviado, precisa ser igual ao id contido no token, senão a resposta é **403**.
+
 ---
 
 ## Endpoints
 
-### Usuário
+### Status (público)
 
-| Método | Rota                | Auth | Descrição                              |
-| ------ | ------------------- | ---- | -------------------------------------- |
-| POST   | `/usuario/cadastro` | ❌   | Registrar novo usuário                 |
-| POST   | `/usuario/login`    | ❌   | Login — retorna token JWT              |
-| POST   | `/usuario/logout`   | ❌   | Logout (simbólico em API stateless)    |
+| Método | Rota          | Auth | Descrição                          |
+| ------ | ------------- | ---- | ---------------------------------- |
+| GET    | `/api/status` | ❌   | Versão e status da API             |
+| GET    | `/api/versao` | ❌   | Versão da API                      |
 
-### Produtos
+### Autenticação
 
-| Método | Rota              | Auth | Descrição                                      |
-| ------ | ----------------- | ---- | ---------------------------------------------- |
-| GET    | `/produtos`       | ❌   | Listar todos (filtro opcional: `?categoria=`)  |
-| GET    | `/produtos/:id`   | ❌   | Obter produto por ID                           |
-| POST   | `/produtos`       | ✅   | Criar produto (multipart com imagens)          |
-| PUT    | `/produtos/:id`   | ✅   | Atualizar produto por completo (com imagens)   |
-| PATCH  | `/produtos/:id`   | ✅   | Atualizar produto parcialmente (JSON body)     |
-| DELETE | `/produtos/:id`   | ✅   | Deletar produto                                |
+| Método | Rota                | Auth | Descrição                           |
+| ------ | ------------------- | ---- | ----------------------------------- |
+| POST   | `/usuario/cadastro` | ❌   | Registrar novo usuário              |
+| POST   | `/usuario/login`    | ❌   | Login — retorna token JWT           |
+| POST   | `/usuario/logout`   | ❌   | Logout (simbólico em API stateless) |
+
+### Categorias · Produtos · Clientes · Pedidos (todas exigem token)
+
+| Método | Rota                | Descrição                        |
+| ------ | ------------------- | -------------------------------- |
+| GET    | `/categorias`       | Listar categorias                |
+| GET    | `/categorias/:id`   | Obter categoria por ID           |
+| POST   | `/categorias`       | Criar categoria                  |
+| PUT    | `/categorias/:id`   | Atualizar categoria              |
+| DELETE | `/categorias/:id`   | Excluir categoria                |
+| GET    | `/produtos`         | Listar produtos (`?categoria=id`)|
+| GET    | `/produtos/:id`     | Obter produto por ID             |
+| POST   | `/produtos`         | Criar produto                    |
+| PUT    | `/produtos/:id`     | Atualizar produto                |
+| DELETE | `/produtos/:id`     | Excluir produto                  |
+| GET    | `/clientes`         | Listar clientes                  |
+| GET    | `/clientes/:id`     | Obter cliente por ID             |
+| POST   | `/clientes`         | Criar cliente                    |
+| PUT    | `/clientes/:id`     | Atualizar cliente                |
+| DELETE | `/clientes/:id`     | Excluir cliente                  |
+| GET    | `/pedidos`          | Listar pedidos                   |
+| GET    | `/pedidos/:id`      | Obter pedido (com itens)         |
+| POST   | `/pedidos`          | Criar pedido com itens           |
+| PUT    | `/pedidos/:id`      | Atualizar pedido                 |
+| DELETE | `/pedidos/:id`      | Excluir pedido                   |
 
 ---
 
-## Exemplos de Uso (Talend API / Postman)
+## Exemplos de Uso
 
-### 1. Registrar usuário
-
-```
-POST /usuario/cadastro
-Content-Type: application/json
-
-{
-  "nome": "Gabriel",
-  "email": "gabriel@email.com",
-  "senha": "minhaSenha123"
-}
-```
-
-**Resposta (201):**
-```json
-{
-  "msg": "Usuário cadastrado com sucesso",
-  "usuario": {
-    "id": "664...",
-    "nome": "Gabriel",
-    "email": "gabriel@email.com"
-  },
-  "token": "eyJhbGciOiJIUzI1NiIs..."
-}
-```
-
-### 2. Login
+### 1. Login
 
 ```
 POST /usuario/login
 Content-Type: application/json
 
 {
-  "email": "gabriel@email.com",
-  "senha": "minhaSenha123"
+  "email": "pittapong@pittapong.com",
+  "senha": "PittaPong123!"
 }
 ```
 
@@ -140,13 +168,19 @@ Content-Type: application/json
 ```json
 {
   "msg": "Login realizado com sucesso",
-  "usuario": {
-    "id": "664...",
-    "nome": "Gabriel",
-    "email": "gabriel@email.com"
-  },
+  "usuario": { "id": 1, "nome": "PittaPong", "email": "pittapong@pittapong.com" },
   "token": "eyJhbGciOiJIUzI1NiIs..."
 }
+```
+
+### 2. Criar categoria (autenticado)
+
+```
+POST /categorias
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+Content-Type: application/json
+
+{ "nome": "Raquetes" }
 ```
 
 ### 3. Criar produto (autenticado)
@@ -154,96 +188,74 @@ Content-Type: application/json
 ```
 POST /produtos
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-Content-Type: multipart/form-data
+Content-Type: application/json
 
-nome: Raquete Pro
-preco: 199.99
-descricao: Raquete profissional de alta qualidade
-categoria: Raquetes
-imagens: [arquivo1.jpg, arquivo2.jpg]
+{
+  "nome": "Raquete Pro",
+  "valor": 199.99,
+  "estoque": 20,
+  "categorias_id_categoria": 1
+}
 ```
 
-### 4. Listar produtos
+### 4. Criar cliente (autenticado)
 
 ```
-GET /produtos
-GET /produtos?categoria=Raquetes
-```
-
-### 5. Obter produto por ID
-
-```
-GET /produtos/664abc123def456...
-```
-
-### 6. Atualizar produto (PUT - completo)
-
-```
-PUT /produtos/664abc123def456...
+POST /clientes
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-Content-Type: multipart/form-data
+Content-Type: application/json
 
-nome: Raquete Pro V2
-preco: 249.99
-descricao: Versão atualizada da raquete profissional
-categoria: Raquetes
+{ "nome": "João Silva", "telefone": "11999998888", "status": "bom" }
 ```
 
-### 7. Atualizar produto (PATCH - parcial)
+### 5. Criar pedido com itens (autenticado)
 
 ```
-PATCH /produtos/664abc123def456...
+POST /pedidos
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 Content-Type: application/json
 
 {
-  "preco": 189.99
+  "data": "2026-07-01",
+  "clientes_id_cliente": 1,
+  "itens": [
+    { "produtos_id_produto": 1, "quantidade": 2, "valor": 199.99 }
+  ]
 }
-```
-
-### 8. Deletar produto
-
-```
-DELETE /produtos/664abc123def456...
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 ```
 
 ---
 
-## Categorias Disponíveis
+## Modelo de Dados (relacional)
 
-- `Raquetes`
-- `Bolinhas`
-- `Redes`
-- `Acessórios`
-- `Outros`
+### usuarios
+`id_usuario` (PK) · `nome` · `email` (único) · `senha` (hash bcrypt)
+
+### categorias
+`id_categoria` (PK) · `nome`
+
+### produtos
+`id_produto` (PK) · `nome` · `valor` · `estoque` · `categorias_id_categoria` (FK → categorias)
+
+### clientes
+`id_cliente` (PK) · `nome` · `telefone` · `status` (`bom` | `medio` | `ruim`)
+
+### pedidos
+`id_pedido` (PK) · `data` · `clientes_id_cliente` (FK → clientes)
+
+### produtos_pedidos (itens do pedido)
+`produtos_id_produto` (FK → produtos) · `pedidos_id_pedido` (FK → pedidos) · `quantidade` · `valor`
+— chave primária composta (`produtos_id_produto`, `pedidos_id_pedido`)
+
+> O dump também contém a tabela `endereco` (vinculada a clientes), fora do escopo de CRUD desta versão.
 
 ---
 
-## Modelo de Dados
+## Segurança
 
-### Usuário
-
-```json
-{
-  "nome": "String (obrigatório)",
-  "email": "String (obrigatório, único)",
-  "senha": "String (obrigatório, hash bcrypt)"
-}
-```
-
-### Produto
-
-```json
-{
-  "usuario": "ObjectId (ref: Usuario, obrigatório)",
-  "nome": "String (obrigatório, max: 80)",
-  "preco": "Number (obrigatório)",
-  "descricao": "String (obrigatório, max: 200)",
-  "categoria": "String (enum: Raquetes|Bolinhas|Redes|Acessórios|Outros)",
-  "imagens": ["String (URLs do Cloudinary)"]
-}
-```
+- **Prepared Statements (`?`)** em todas as queries SQL (proteção contra SQL Injection).
+- Senhas armazenadas com **hash bcrypt**.
+- Rotas de CRUD protegidas por **JWT + validação estrita do usuário** (401/403).
 
 ---
 
