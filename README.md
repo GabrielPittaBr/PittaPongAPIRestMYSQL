@@ -75,10 +75,6 @@ O seed cria um usuário administrador para login (senha com hash bcrypt):
 - **nick:** `pittapong`
 - **senha:** `PittaPong123!`
 
-> A tabela `usuarios` segue o dump fornecido (`id_usuario`, `nome`, `nick`, `senha`). O usuário
-> `candido` que vem no dump usa hash MD5 e **não** é compatível com o login (bcrypt); use o usuário
-> semeado acima.
-
 Documentação interativa (Swagger UI): **http://localhost:3000/api-docs**
 
 ---
