@@ -1,9 +1,15 @@
 const express = require('express');
 require('dotenv').config();
 
-const conectarDB = require('./config/db');
-const produtoRoutes = require('./routes/productRoutes');
-const usuarioRoutes = require('./routes/userRoutes');
+const pool = require('./config/database');
+
+// Rotas
+const apiRoutes = require('./routes/apiRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
+const categoriaRoutes = require('./routes/categoriaRoutes');
+const produtoRoutes = require('./routes/produtoRoutes');
+const clienteRoutes = require('./routes/clienteRoutes');
+const pedidoRoutes = require('./routes/pedidoRoutes');
 
 // Swagger
 const swaggerUi = require('swagger-ui-express');
@@ -32,38 +38,47 @@ app.use(
 );
 
 // Rotas da API
-app.use('/produtos', produtoRoutes);
+app.use('/api', apiRoutes); // rota pública de status/versão
 app.use('/usuario', usuarioRoutes);
+app.use('/categorias', categoriaRoutes);
+app.use('/produtos', produtoRoutes);
+app.use('/clientes', clienteRoutes);
+app.use('/pedidos', pedidoRoutes);
 
-// Rota raiz (quando não há rotas correspondentes) - informações da API
+// Rota raiz - informações da API
 app.get('/', (req, res) => {
   res.json({
     api: 'PittaPong REST API',
-    versao: '1.1.0',
+    versao: '2.0.0',
     documentacao: 'http://localhost:3000/api-docs',
     endpoints: {
+      status: {
+        'GET /api/status': 'Status e versão da API (público)',
+        'GET /api/versao': 'Versão da API (público)',
+      },
       usuario: {
         'POST /usuario/cadastro': 'Registrar novo usuário',
         'POST /usuario/login': 'Login e obter token JWT',
-        'POST /usuario/logout': 'Logout (simbólico)'
+        'POST /usuario/logout': 'Logout (simbólico)',
       },
-      produtos: {
-        'GET /produtos': 'Listar todos os produtos (filtro opcional: ?categoria=)',
-        'GET /produtos/:id': 'Obter produto por ID',
-        'POST /produtos': 'Criar produto (requer autenticação)',
-        'PUT /produtos/:id': 'Atualizar produto completo (requer autenticação)',
-        'PATCH /produtos/:id': 'Atualizar produto parcial (requer autenticação)',
-        'DELETE /produtos/:id': 'Deletar produto (requer autenticação)'
-      }
-    }
+      categorias: 'CRUD de categorias (requer autenticação)',
+      produtos: 'CRUD de produtos (requer autenticação)',
+      clientes: 'CRUD de clientes (requer autenticação)',
+      pedidos: 'CRUD de pedidos com itens (requer autenticação)',
+    },
   });
 });
 
-// Conectar ao MongoDB e iniciar servidor
-conectarDB().then(() => {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-    console.log(`Documentação Swagger: http://localhost:${PORT}/api-docs`);
+// Testa a conexão com o MySQL e inicia o servidor
+pool.testarConexao()
+  .then(() => {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`Servidor rodando na porta ${PORT}`);
+      console.log(`Documentação Swagger: http://localhost:${PORT}/api-docs`);
+    });
+  })
+  .catch((error) => {
+    console.error('Erro ao conectar ao MySQL:', error.message);
+    process.exit(1);
   });
-});

@@ -1,8 +1,12 @@
-const Usuario = require('../models/userModels');
+const Usuario = require('../models/usuarioModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// POST /usuario/cadastro - registrar novo usuário
+// Gera um token JWT contendo o id do usuario no payload.
+const gerarToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+// POST /usuario/cadastro - registrar novo usuario na base relacional
 exports.register = async (req, res) => {
   try {
     const { nome, email, senha } = req.body;
@@ -11,43 +15,28 @@ exports.register = async (req, res) => {
       return res.status(400).json({ msg: 'Preencha todos os campos (nome, email, senha)' });
     }
 
-    const existe = await Usuario.findOne({ email });
+    const existe = await Usuario.buscarPorEmail(email);
     if (existe) {
       return res.status(409).json({ msg: 'Email já cadastrado' });
     }
 
     const hash = await bcrypt.hash(senha, 10);
+    const id = await Usuario.criar({ nome, email, senha: hash });
 
-    const usuario = new Usuario({
-      nome,
-      email,
-      senha: hash
-    });
-
-    await usuario.save();
-
-    // Gerar token JWT para auto-login após cadastro
-    const token = jwt.sign(
-      { id: usuario._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    // Gera token JWT para auto-login apos cadastro
+    const token = gerarToken(id);
 
     res.status(201).json({
       msg: 'Usuário cadastrado com sucesso',
-      usuario: {
-        id: usuario._id,
-        nome: usuario.nome,
-        email: usuario.email
-      },
-      token
+      usuario: { id, nome, email },
+      token,
     });
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }
 };
 
-// POST /usuario/login - autenticar usuário e retornar token
+// POST /usuario/login - autenticar usuario e retornar token
 exports.login = async (req, res) => {
   try {
     const { email, senha } = req.body;
@@ -56,7 +45,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ msg: 'Preencha todos os campos (email, senha)' });
     }
 
-    const usuario = await Usuario.findOne({ email });
+    const usuario = await Usuario.buscarPorEmail(email);
     if (!usuario) {
       return res.status(404).json({ msg: 'Usuário não encontrado' });
     }
@@ -66,27 +55,23 @@ exports.login = async (req, res) => {
       return res.status(401).json({ msg: 'Senha inválida' });
     }
 
-    const token = jwt.sign(
-      { id: usuario._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    const token = gerarToken(usuario.id_usuario);
 
     res.json({
       msg: 'Login realizado com sucesso',
       usuario: {
-        id: usuario._id,
+        id: usuario.id_usuario,
         nome: usuario.nome,
-        email: usuario.email
+        email: usuario.email,
       },
-      token
+      token,
     });
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }
 };
 
-// POST /usuario/logout - logout (simbólico em API stateless)
+// POST /usuario/logout - logout (simbolico em API stateless com JWT)
 exports.logout = (req, res) => {
   res.json({ msg: 'Logout realizado com sucesso' });
 };

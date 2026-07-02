@@ -1,7 +1,7 @@
 {
   "name": "pittapong2.0",
-  "version": "1.0.0",
-  "description": "Versão atualizada e funcional do meu antigo trabalho, PittaPong, um site e-commerce de artigos esportivos de tênis de mesa. Trabalho: Desenvolvimento de API REST Escalável com Node.js e MongoDB1.",
+  "version": "2.0.0",
+  "description": "API REST do PittaPong, e-commerce de artigos esportivos de tênis de mesa. Persistência migrada de MongoDB para MySQL (base pittapong) com Node.js, Express e autenticação JWT.",
   "main": "app.js",
   "scripts": {
     "start": "node src/app.js",
@@ -23,14 +23,11 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.2",
-    "cloudinary": "^2.10.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.6.1",
-    "multer": "^2.1.1",
+    "mysql2": "^3.11.0",
     "prettier": "^3.8.3",
-    "streamifier": "^0.1.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"
   }
