@@ -5,11 +5,12 @@ const options = {
     openapi: '3.0.0',
     info: {
       title: 'PittaPong REST API',
-      version: '1.1.0',
+      version: '2.0.0',
       description:
         'API REST de e-commerce de artigos esportivos de tênis de mesa. ' +
-        'Permite gerenciar produtos e autenticar usuários via JWT. ' +
-        'Para acessar rotas protegidas, realize o login e utilize o token no botão **Authorize** acima.',
+        'Persistência em **MySQL** (base pittapong). Gerencia categorias, produtos, ' +
+        'clientes e pedidos, com autenticação via JWT. ' +
+        'Para acessar as rotas protegidas, realize o login e utilize o token no botão **Authorize** acima.',
       contact: {
         name: 'Gabriel Pitta',
         url: 'https://github.com/GabrielPittaBr',
@@ -35,20 +36,22 @@ const options = {
         },
       },
       schemas: {
-        // Usuário
+        // Status
+        StatusResponse: {
+          type: 'object',
+          properties: {
+            versao: { type: 'string', example: '2.0.0' },
+            status: { type: 'string', example: 'online' },
+          },
+        },
+
+        // Usuário / Autenticação
         CadastroInput: {
           type: 'object',
           required: ['nome', 'email', 'senha'],
           properties: {
-            nome: {
-              type: 'string',
-              example: 'Gabriel Pitta',
-            },
-            email: {
-              type: 'string',
-              format: 'email',
-              example: 'gabriel@example.com',
-            },
+            nome: { type: 'string', example: 'Gabriel Pitta' },
+            email: { type: 'string', format: 'email', example: 'gabriel@example.com' },
             senha: {
               type: 'string',
               format: 'password',
@@ -61,45 +64,23 @@ const options = {
           type: 'object',
           required: ['email', 'senha'],
           properties: {
-            email: {
-              type: 'string',
-              format: 'email',
-              example: 'gabriel@example.com',
-            },
-            senha: {
-              type: 'string',
-              format: 'password',
-              example: 'minhasenha123',
-            },
+            email: { type: 'string', format: 'email', example: 'gabriel@example.com' },
+            senha: { type: 'string', format: 'password', example: 'minhasenha123' },
           },
         },
         UsuarioResponse: {
           type: 'object',
           properties: {
-            id: {
-              type: 'string',
-              example: '6650f2a1b4e2c12345678901',
-            },
-            nome: {
-              type: 'string',
-              example: 'Gabriel Pitta',
-            },
-            email: {
-              type: 'string',
-              example: 'gabriel@example.com',
-            },
+            id: { type: 'integer', example: 1 },
+            nome: { type: 'string', example: 'Gabriel Pitta' },
+            email: { type: 'string', example: 'gabriel@example.com' },
           },
         },
         AuthResponse: {
           type: 'object',
           properties: {
-            msg: {
-              type: 'string',
-              example: 'Login realizado com sucesso',
-            },
-            usuario: {
-              $ref: '#/components/schemas/UsuarioResponse',
-            },
+            msg: { type: 'string', example: 'Login realizado com sucesso' },
+            usuario: { $ref: '#/components/schemas/UsuarioResponse' },
             token: {
               type: 'string',
               example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
@@ -107,106 +88,116 @@ const options = {
           },
         },
 
+        // Categoria
+        CategoriaInput: {
+          type: 'object',
+          required: ['nome'],
+          properties: {
+            nome: { type: 'string', maxLength: 45, example: 'Raquetes' },
+          },
+        },
+        CategoriaResponse: {
+          type: 'object',
+          properties: {
+            id_categoria: { type: 'integer', example: 1 },
+            nome: { type: 'string', example: 'Raquetes' },
+          },
+        },
+
         // Produto
         ProdutoInput: {
           type: 'object',
-          required: ['nome', 'preco', 'descricao'],
+          required: ['nome', 'valor', 'categorias_id_categoria'],
           properties: {
-            nome: {
-              type: 'string',
-              maxLength: 80,
-              example: 'Raquete Butterfly Timo Boll',
-            },
-            preco: {
-              type: 'number',
-              format: 'float',
-              example: 299.9,
-            },
-            descricao: {
-              type: 'string',
-              maxLength: 200,
-              example: 'Raquete profissional para jogadores avançados.',
-            },
-            categoria: {
-              type: 'string',
-              enum: ['Raquetes', 'Bolinhas', 'Redes', 'Acessórios', 'Outros'],
-              default: 'Outros',
-              example: 'Raquetes',
-            },
-          },
-        },
-        ProdutoPatchInput: {
-          type: 'object',
-          description: 'Pelo menos um campo deve ser informado.',
-          properties: {
-            nome: {
-              type: 'string',
-              maxLength: 80,
-              example: 'Raquete Donic Waldner',
-            },
-            preco: {
-              type: 'number',
-              format: 'float',
-              example: 189.5,
-            },
-            descricao: {
-              type: 'string',
-              maxLength: 200,
-              example: 'Raquete de alta performance para competições.',
-            },
-            categoria: {
-              type: 'string',
-              enum: ['Raquetes', 'Bolinhas', 'Redes', 'Acessórios', 'Outros'],
-              example: 'Raquetes',
-            },
-            imagens: {
-              type: 'array',
-              items: { type: 'string', format: 'uri' },
-              example: ['https://res.cloudinary.com/example/image/upload/v1/produtos/foto.jpg'],
-            },
+            nome: { type: 'string', maxLength: 120, example: 'Raquete Butterfly Timo Boll' },
+            valor: { type: 'number', format: 'double', example: 299.9 },
+            estoque: { type: 'integer', default: 1, example: 15 },
+            categorias_id_categoria: { type: 'integer', example: 1 },
           },
         },
         ProdutoResponse: {
           type: 'object',
           properties: {
-            _id: {
+            id_produto: { type: 'integer', example: 1 },
+            nome: { type: 'string', example: 'Raquete Butterfly Timo Boll' },
+            valor: { type: 'number', example: 299.9 },
+            estoque: { type: 'integer', example: 15 },
+            categorias_id_categoria: { type: 'integer', example: 1 },
+            categoria_nome: { type: 'string', example: 'Raquetes' },
+          },
+        },
+
+        // Cliente
+        ClienteInput: {
+          type: 'object',
+          required: ['nome', 'telefone'],
+          properties: {
+            nome: { type: 'string', maxLength: 45, example: 'João Silva' },
+            telefone: { type: 'string', maxLength: 15, example: '11999998888' },
+            status: {
               type: 'string',
-              example: '6650f3b2c1d3e45678901234',
+              enum: ['bom', 'medio', 'ruim'],
+              default: 'medio',
+              example: 'bom',
             },
-            usuario: {
+          },
+        },
+        ClienteResponse: {
+          type: 'object',
+          properties: {
+            id_cliente: { type: 'integer', example: 1 },
+            nome: { type: 'string', example: 'João Silva' },
+            telefone: { type: 'string', example: '11999998888' },
+            status: { type: 'string', example: 'bom' },
+          },
+        },
+
+        // Pedido / Itens
+        ItemPedidoInput: {
+          type: 'object',
+          required: ['produtos_id_produto', 'quantidade', 'valor'],
+          properties: {
+            produtos_id_produto: { type: 'integer', example: 1 },
+            quantidade: { type: 'number', example: 2 },
+            valor: { type: 'number', example: 299.9 },
+          },
+        },
+        ItemPedidoResponse: {
+          type: 'object',
+          properties: {
+            produtos_id_produto: { type: 'integer', example: 1 },
+            produto_nome: { type: 'string', example: 'Raquete Butterfly Timo Boll' },
+            quantidade: { type: 'number', example: 2 },
+            valor: { type: 'number', example: 299.9 },
+          },
+        },
+        PedidoInput: {
+          type: 'object',
+          required: ['clientes_id_cliente', 'itens'],
+          properties: {
+            data: {
               type: 'string',
-              example: '6650f2a1b4e2c12345678901',
+              format: 'date',
+              description: 'Data do pedido (YYYY-MM-DD). Se omitida, usa a data atual.',
+              example: '2026-07-01',
             },
-            nome: {
-              type: 'string',
-              example: 'Raquete Butterfly Timo Boll',
-            },
-            preco: {
-              type: 'number',
-              example: 299.9,
-            },
-            descricao: {
-              type: 'string',
-              example: 'Raquete profissional para jogadores avançados.',
-            },
-            categoria: {
-              type: 'string',
-              example: 'Raquetes',
-            },
-            imagens: {
+            clientes_id_cliente: { type: 'integer', example: 1 },
+            itens: {
               type: 'array',
-              items: { type: 'string' },
-              example: ['https://res.cloudinary.com/example/image/upload/v1/produtos/foto.jpg'],
+              items: { $ref: '#/components/schemas/ItemPedidoInput' },
             },
-            createdAt: {
-              type: 'string',
-              format: 'date-time',
-              example: '2025-06-11T10:00:00.000Z',
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'date-time',
-              example: '2025-06-11T10:00:00.000Z',
+          },
+        },
+        PedidoResponse: {
+          type: 'object',
+          properties: {
+            id_pedido: { type: 'integer', example: 1 },
+            data: { type: 'string', format: 'date', example: '2026-07-01' },
+            clientes_id_cliente: { type: 'integer', example: 1 },
+            cliente_nome: { type: 'string', example: 'João Silva' },
+            itens: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/ItemPedidoResponse' },
             },
           },
         },
@@ -215,38 +206,34 @@ const options = {
         ErroResponse: {
           type: 'object',
           properties: {
-            msg: {
-              type: 'string',
-              example: 'Mensagem de erro descritiva',
-            },
+            msg: { type: 'string', example: 'Mensagem de erro descritiva' },
           },
         },
         ErroInterno: {
           type: 'object',
           properties: {
-            erro: {
-              type: 'string',
-              example: 'Detalhe técnico do erro interno',
-            },
+            erro: { type: 'string', example: 'Detalhe técnico do erro interno' },
           },
         },
       },
     },
     tags: [
-      {
-        name: 'Autenticação',
-        description: 'Endpoints de cadastro, login e logout de usuários',
-      },
-      {
-        name: 'Produtos',
-        description: 'CRUD completo de produtos esportivos de tênis de mesa',
-      },
+      { name: 'Status', description: 'Rota pública de monitoramento (versão e status da API)' },
+      { name: 'Autenticação', description: 'Endpoints de cadastro, login e logout de usuários' },
+      { name: 'Categorias', description: 'CRUD de categorias (requer autenticação)' },
+      { name: 'Produtos', description: 'CRUD de produtos (requer autenticação)' },
+      { name: 'Clientes', description: 'CRUD de clientes (requer autenticação)' },
+      { name: 'Pedidos', description: 'CRUD de pedidos com itens (requer autenticação)' },
     ],
   },
   // Arquivos que contêm as anotações @swagger / @openapi
   apis: [
-    './src/routes/userRoutes.js',
-    './src/routes/productRoutes.js',
+    './src/routes/apiRoutes.js',
+    './src/routes/usuarioRoutes.js',
+    './src/routes/categoriaRoutes.js',
+    './src/routes/produtoRoutes.js',
+    './src/routes/clienteRoutes.js',
+    './src/routes/pedidoRoutes.js',
   ],
 };
 
