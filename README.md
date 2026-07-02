@@ -36,7 +36,7 @@ cp .env_exemplo .env
 
 ### Banco de dados
 
-Importe o script relacional (cria a base `pittapong` e todas as tabelas, incluindo `usuarios`):
+Importe o script relacional (cria a base `pittapong`, todas as tabelas — incluindo `usuarios` — e já popula com os dados reais fornecidos):
 
 ```bash
 mysql -u root -p < database/pittapong.sql
@@ -70,10 +70,14 @@ npm start
 npm run seed
 ```
 
-O seed cria um usuário para login:
+O seed cria um usuário administrador para login (senha com hash bcrypt):
 
-- **email:** `pittapong@pittapong.com`
+- **nick:** `pittapong`
 - **senha:** `PittaPong123!`
+
+> A tabela `usuarios` segue o dump fornecido (`id_usuario`, `nome`, `nick`, `senha`). O usuário
+> `candido` que vem no dump usa hash MD5 e **não** é compatível com o login (bcrypt); use o usuário
+> semeado acima.
 
 Documentação interativa (Swagger UI): **http://localhost:3000/api-docs**
 
@@ -159,7 +163,7 @@ POST /usuario/login
 Content-Type: application/json
 
 {
-  "email": "pittapong@pittapong.com",
+  "nick": "pittapong",
   "senha": "PittaPong123!"
 }
 ```
@@ -168,7 +172,7 @@ Content-Type: application/json
 ```json
 {
   "msg": "Login realizado com sucesso",
-  "usuario": { "id": 1, "nome": "PittaPong", "email": "pittapong@pittapong.com" },
+  "usuario": { "id": 2, "nome": "PittaPong Admin", "nick": "pittapong" },
   "token": "eyJhbGciOiJIUzI1NiIs..."
 }
 ```
@@ -180,7 +184,7 @@ POST /categorias
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 Content-Type: application/json
 
-{ "nome": "Raquetes" }
+{ "nome": "Periféricos" }
 ```
 
 ### 3. Criar produto (autenticado)
@@ -191,10 +195,10 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 Content-Type: application/json
 
 {
-  "nome": "Raquete Pro",
-  "valor": 199.99,
+  "nome": "Teclado Mecânico RGB",
+  "valor": 349.90,
   "estoque": 20,
-  "categorias_id_categoria": 1
+  "categorias_id_categoria": 5
 }
 ```
 
@@ -229,7 +233,7 @@ Content-Type: application/json
 ## Modelo de Dados (relacional)
 
 ### usuarios
-`id_usuario` (PK) · `nome` · `email` (único) · `senha` (hash bcrypt)
+`id_usuario` (PK) · `nome` · `nick` · `senha` (hash bcrypt)
 
 ### categorias
 `id_categoria` (PK) · `nome`
