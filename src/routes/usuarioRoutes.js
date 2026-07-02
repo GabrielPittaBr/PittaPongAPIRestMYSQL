@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const authController = require('../controllers/userControllers');
+const authController = require('../controllers/authController');
 
 /**
  * @swagger
@@ -11,9 +11,9 @@ const authController = require('../controllers/userControllers');
  *       - Autenticação
  *     summary: Registrar novo usuário
  *     description: >
- *       Cria uma nova conta de usuário. Após o cadastro bem-sucedido,
- *       um token JWT é retornado automaticamente para que o usuário
- *       já possa usar as rotas protegidas sem precisar fazer login.
+ *       Cria uma nova conta de usuário na base relacional (tabela `usuarios`).
+ *       A senha é armazenada com hash bcrypt. Após o cadastro bem-sucedido,
+ *       um token JWT é retornado automaticamente para uso imediato nas rotas protegidas.
  *     requestBody:
  *       required: true
  *       content:
@@ -30,7 +30,7 @@ const authController = require('../controllers/userControllers');
  *             example:
  *               msg: Usuário cadastrado com sucesso
  *               usuario:
- *                 id: "6650f2a1b4e2c12345678901"
+ *                 id: 1
  *                 nome: Gabriel Pitta
  *                 email: gabriel@example.com
  *               token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -67,8 +67,8 @@ router.post('/cadastro', authController.register);
  *       - Autenticação
  *     summary: Autenticar usuário e obter token JWT
  *     description: >
- *       Valida as credenciais do usuário (email e senha) e retorna um
- *       **token JWT** válido por 1 dia. Copie o token e use o botão
+ *       Valida as credenciais do usuário (email e senha) contra a tabela `usuarios`
+ *       e retorna um **token JWT** válido por 1 dia. Copie o token e use o botão
  *       **Authorize** para autenticar as rotas protegidas.
  *     requestBody:
  *       required: true
@@ -86,7 +86,7 @@ router.post('/cadastro', authController.register);
  *             example:
  *               msg: Login realizado com sucesso
  *               usuario:
- *                 id: "6650f2a1b4e2c12345678901"
+ *                 id: 1
  *                 nome: Gabriel Pitta
  *                 email: gabriel@example.com
  *               token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
