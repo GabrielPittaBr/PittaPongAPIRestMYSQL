@@ -170,20 +170,28 @@ const options = {
         // Pedido / Itens
         ItemPedidoInput: {
           type: 'object',
-          required: ['produtos_id_produto', 'quantidade', 'valor'],
+          required: ['produtos_id_produto', 'quantidade'],
           properties: {
             produtos_id_produto: { type: 'integer', example: 1 },
             quantidade: { type: 'number', example: 2 },
-            valor: { type: 'number', example: 299.9 },
           },
         },
         ItemPedidoResponse: {
           type: 'object',
           properties: {
             produtos_id_produto: { type: 'integer', example: 1 },
-            produto_nome: { type: 'string', example: 'Raquete Butterfly Timo Boll' },
+            produto_nome: { type: 'string', example: 'Notebook HP 256R-G9' },
             quantidade: { type: 'number', example: 2 },
-            valor: { type: 'number', example: 299.9 },
+            valor: {
+              type: 'number',
+              description: 'Preço unitário do produto (calculado pelo servidor).',
+              example: 4578,
+            },
+            subtotal: {
+              type: 'number',
+              description: 'quantidade × valor unitário.',
+              example: 9156,
+            },
           },
         },
         PedidoInput: {
@@ -213,6 +221,11 @@ const options = {
             itens: {
               type: 'array',
               items: { $ref: '#/components/schemas/ItemPedidoResponse' },
+            },
+            total: {
+              type: 'number',
+              description: 'Soma dos subtotais dos itens.',
+              example: 9156,
             },
           },
         },

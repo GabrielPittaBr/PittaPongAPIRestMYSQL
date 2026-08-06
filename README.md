@@ -79,6 +79,8 @@ persistência em MySQL e documentação interativa via Swagger.
 - 🗃️ **CRUD completo** de quatro entidades — categorias, produtos, clientes e pedidos
 - 🔐 **Autenticação JWT** com regra de **acesso estrito**: token válido + usuário existente no banco
 - 🧾 **Pedidos com itens** criados, atualizados e removidos dentro de **transações SQL**
+- 💰 **Preço calculado no servidor** — o cliente envia só produto e quantidade; a API busca o valor
+  unitário no banco e devolve `subtotal` por item e `total` do pedido
 - 🔎 **Filtro por categoria** em `GET /produtos?categoria=<id>` e `JOIN`s nas consultas de detalhe
 - 🛡️ **Prepared statements** em todas as queries e senhas com **hash bcrypt**
 - 📖 **Swagger UI** interativo, com o servidor de produção detectado automaticamente
@@ -252,7 +254,9 @@ JWT_SECRET=sua_jwt_secret
 
 - `GET /produtos` aceita o filtro **`?categoria=<id>`**
 - `GET /produtos/:id` traz a categoria via `JOIN`; `GET /pedidos` traz o nome do cliente
-- `GET /pedidos/:id` retorna o pedido **com seus itens**
+- `GET /pedidos/:id` retorna o pedido **com seus itens**, cada um com `subtotal`, mais o `total`
+- Nos itens de pedido, envie apenas `produtos_id_produto` e `quantidade` — o **preço unitário é
+  definido pelo servidor** a partir do cadastro do produto
 - `POST`, `PUT` e `DELETE` de pedidos rodam em **transação** — o `PUT` substitui os itens quando um
   array `itens` é enviado
 
@@ -371,8 +375,34 @@ Content-Type: application/json
   "data": "2026-07-01",
   "clientes_id_cliente": 1,
   "itens": [
-    { "produtos_id_produto": 1, "quantidade": 2, "valor": 199.99 }
+    { "produtos_id_produto": 1, "quantidade": 2 }
   ]
+}
+```
+
+> O preço **não** é enviado pelo cliente: a API busca o `valor` atual do produto no banco.
+
+**Resposta (`201`):**
+
+```json
+{
+  "msg": "Pedido criado com sucesso",
+  "pedido": {
+    "id_pedido": 7,
+    "data": "2026-07-01",
+    "clientes_id_cliente": 1,
+    "cliente_nome": "João Silva",
+    "itens": [
+      {
+        "produtos_id_produto": 1,
+        "produto_nome": "Notebook HP 256R-G9",
+        "quantidade": 2,
+        "valor": 4578,
+        "subtotal": 9156
+      }
+    ],
+    "total": 9156
+  }
 }
 ```
 
