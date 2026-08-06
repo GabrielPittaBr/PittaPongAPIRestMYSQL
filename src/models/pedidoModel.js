@@ -36,7 +36,13 @@ exports.buscarPorId = async (id) => {
     [id]
   );
 
-  pedido.itens = itens;
+  // `valor` e o preco unitario; `subtotal` = quantidade x valor.
+  pedido.itens = itens.map((item) => ({
+    ...item,
+    subtotal: item.quantidade * item.valor,
+  }));
+  pedido.total = pedido.itens.reduce((soma, item) => soma + item.subtotal, 0);
+
   return pedido;
 };
 
