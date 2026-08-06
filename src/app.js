@@ -1,7 +1,13 @@
 const express = require('express');
+const cors = require('cors');
 require('dotenv').config();
 
 const pool = require('./config/database');
+const opcoesCors = require('./config/cors');
+
+// URL publica da API em producao (ex: https://pittapong-api.onrender.com).
+// Sem ela, a documentacao e os links apontam para o servidor local.
+const API_PUBLIC_URL = process.env.API_PUBLIC_URL;
 
 // Rotas
 const apiRoutes = require('./routes/apiRoutes');
@@ -18,6 +24,7 @@ const swaggerSpecs = require('./config/swagger');
 const app = express();
 
 // Middlewares
+app.use(cors(opcoesCors));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -47,10 +54,11 @@ app.use('/pedidos', pedidoRoutes);
 
 // Rota raiz - informações da API
 app.get('/', (req, res) => {
+  const base = API_PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
   res.json({
     api: 'PittaPong REST API',
     versao: '2.0.0',
-    documentacao: 'http://localhost:3000/api-docs',
+    documentacao: `${base}/api-docs`,
     endpoints: {
       status: {
         'GET /api/status': 'Status e versão da API (público)',
@@ -73,9 +81,17 @@ app.get('/', (req, res) => {
 pool.testarConexao()
   .then(() => {
     const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
+    // Escuta em 0.0.0.0 para que o roteador da plataforma de deploy (Render)
+    // alcance o processo de fora do container.
+    app.listen(PORT, '0.0.0.0', () => {
+      const base = API_PUBLIC_URL || `http://localhost:${PORT}`;
       console.log(`Servidor rodando na porta ${PORT}`);
-      console.log(`Documentação Swagger: http://localhost:${PORT}/api-docs`);
+      console.log(`Documentação Swagger: ${base}/api-docs`);
+      console.log(
+        opcoesCors.origensPermitidas.length > 0
+          ? `CORS restrito a: ${opcoesCors.origensPermitidas.join(', ')}`
+          : 'CORS liberado para qualquer origem (CORS_ORIGIN não definida)'
+      );
     });
   })
   .catch((error) => {

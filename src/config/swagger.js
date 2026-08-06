@@ -1,4 +1,24 @@
+const path = require('path');
 const swaggerJsdoc = require('swagger-jsdoc');
+require('dotenv').config();
+
+// Lista de servidores do Swagger UI. O primeiro item e o selecionado por padrao,
+// entao a URL publica vem na frente quando existe — assim o "Try it out" dispara
+// requisicoes contra o ambiente publicado, e nao contra o localhost de quem avalia.
+const PORT = process.env.PORT || 3000;
+const servidores = [];
+
+if (process.env.API_PUBLIC_URL) {
+  servidores.push({
+    url: process.env.API_PUBLIC_URL,
+    description: 'Servidor de produção',
+  });
+}
+
+servidores.push({
+  url: `http://localhost:${PORT}`,
+  description: 'Servidor local de desenvolvimento',
+});
 
 const options = {
   definition: {
@@ -19,12 +39,7 @@ const options = {
         name: 'ISC',
       },
     },
-    servers: [
-      {
-        url: 'http://localhost:3000',
-        description: 'Servidor local de desenvolvimento',
-      },
-    ],
+    servers: servidores,
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -226,14 +241,17 @@ const options = {
       { name: 'Pedidos', description: 'CRUD de pedidos com itens (requer autenticação)' },
     ],
   },
-  // Arquivos que contêm as anotações @swagger / @openapi
+  // Arquivos que contêm as anotações @swagger / @openapi.
+  // Caminhos resolvidos a partir deste módulo, e não do diretório de trabalho do
+  // processo — caso contrário a documentação sobe vazia quando a plataforma de
+  // deploy inicia o processo fora da raiz do repositório.
   apis: [
-    './src/routes/apiRoutes.js',
-    './src/routes/usuarioRoutes.js',
-    './src/routes/categoriaRoutes.js',
-    './src/routes/produtoRoutes.js',
-    './src/routes/clienteRoutes.js',
-    './src/routes/pedidoRoutes.js',
+    path.join(__dirname, '../routes/apiRoutes.js'),
+    path.join(__dirname, '../routes/usuarioRoutes.js'),
+    path.join(__dirname, '../routes/categoriaRoutes.js'),
+    path.join(__dirname, '../routes/produtoRoutes.js'),
+    path.join(__dirname, '../routes/clienteRoutes.js'),
+    path.join(__dirname, '../routes/pedidoRoutes.js'),
   ],
 };
 
