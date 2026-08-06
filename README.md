@@ -9,6 +9,24 @@ Desenvolvida com **Node.js**, **Express**, **MySQL** e autenticação via **JWT 
 
 ---
 
+## Ambiente publicado
+
+| Camada | Serviço | Link |
+| ------ | ------- | ---- |
+| **API REST** | Render | https://pittapongapirestmysql.onrender.com |
+| **Documentação (Swagger UI)** | Render | https://pittapongapirestmysql.onrender.com/api-docs |
+| **Banco de dados** | Aiven (MySQL 8.4) | base `pittapong`, TLS obrigatório |
+
+Para testar pelo Swagger: faça **`POST /usuario/login`** com `pittapong` / `PittaPong123!`,
+copie o `token` e cole no botão **Authorize** — as rotas de CRUD passam a responder.
+
+> O plano Free do Render hiberna o serviço após inatividade. A primeira requisição depois
+> disso pode levar dezenas de segundos; as seguintes são normais.
+
+Detalhes da migração para nuvem em [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
+---
+
 ## Tecnologias
 
 - **Node.js** + **Express 5**
@@ -314,9 +332,13 @@ Variáveis de ambiente no painel do Render:
 | `DB_SSL_CA`      | conteúdo integral do `ca.pem` (valor multilinha)   |
 | `JWT_SECRET`     | segredo forte, **diferente** do usado localmente   |
 | `API_PUBLIC_URL` | URL pública do serviço, ex: `https://x.onrender.com` |
-| `CORS_ORIGIN`    | URL do front-end na Vercel                         |
+| `CORS_ORIGIN`    | URL do front-end na Vercel (opcional — ver abaixo)  |
 
 > `PORT` é injetada automaticamente pelo Render — não a configure manualmente.
+>
+> `CORS_ORIGIN` só é necessária quando existir um front-end. Enquanto estiver ausente, a
+> API aceita requisições de qualquer origem, o que mantém o Swagger UI e os testes
+> manuais funcionando normalmente.
 >
 > `API_PUBLIC_URL` só é conhecida após o primeiro deploy. Configure-a e faça um novo deploy
 > para que o Swagger UI passe a apontar para o ambiente publicado.
