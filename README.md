@@ -23,8 +23,8 @@ Desenvolvida com **Node.js**, **Express**, **MySQL** e autenticação via **JWT 
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/GabrielPittaBr/PittaPong2.0.git
-cd PittaPongAPIRESTMYSQL
+git clone https://github.com/GabrielPittaBr/PittaPongAPIRestMYSQL.git
+cd PittaPongAPIRestMYSQL
 
 # Instalar dependências
 npm install
@@ -44,6 +44,8 @@ mysql -u root -p < database/pittapong.sql
 
 ### Variáveis de ambiente (`.env`)
 
+O arquivo `.env_exemplo` documenta o conjunto completo. Para desenvolvimento local:
+
 ```
 PORT=3000
 
@@ -57,6 +59,10 @@ DB_NAME=pittapong
 # Autenticação JWT
 JWT_SECRET=sua_jwt_secret
 ```
+
+As variáveis de nuvem (`DB_SSL`, `DB_SSL_CA`, `API_PUBLIC_URL`, `CORS_ORIGIN`) são
+opcionais e, quando ausentes, a aplicação se comporta exatamente como antes. Veja
+[Deploy em nuvem](#deploy-em-nuvem).
 
 ---
 
@@ -256,6 +262,72 @@ Content-Type: application/json
 - **Prepared Statements (`?`)** em todas as queries SQL (proteção contra SQL Injection).
 - Senhas armazenadas com **hash bcrypt**.
 - Rotas de CRUD protegidas por **JWT + validação estrita do usuário** (401/403).
+- **CORS** restrito às origens de `CORS_ORIGIN` em produção.
+- **TLS** obrigatório na conexão com o banco em nuvem, com validação do certificado CA.
+
+---
+
+## Deploy em nuvem
+
+Arquitetura em três camadas: **Aiven** (MySQL) · **Render** (API REST) · **Vercel** (front-end).
+
+### 1. Banco de dados (Aiven)
+
+Crie um serviço MySQL no Aiven e carregue o schema. O mesmo script usado localmente
+funciona na nuvem — o `avnadmin` tem permissão para criar a base `pittapong`:
+
+```bash
+mysql --host=<host>.aivencloud.com --port=<porta> --user=avnadmin --password \
+      --ssl-mode=REQUIRED defaultdb < database/pittapong.sql
+```
+
+> As tabelas são criadas na base **`pittapong`**, não em `defaultdb`. Use `DB_NAME=pittapong`.
+
+Baixe o **CA certificate** (`ca.pem`) no painel do serviço — ele vai para a variável `DB_SSL_CA`.
+
+Em seguida, com o `.env` local apontando para o Aiven, crie o usuário administrador:
+
+```bash
+npm run seed
+```
+
+### 2. API REST (Render)
+
+Crie um **Web Service** apontando para este repositório:
+
+| Configuração   | Valor         |
+| -------------- | ------------- |
+| Build command  | `npm install` |
+| Start command  | `npm start`   |
+| Root directory | (raiz do repo)|
+
+Variáveis de ambiente no painel do Render:
+
+| Variável         | Valor                                              |
+| ---------------- | -------------------------------------------------- |
+| `DB_HOST`        | host do serviço Aiven                              |
+| `DB_PORT`        | porta do serviço Aiven                             |
+| `DB_USER`        | `avnadmin`                                         |
+| `DB_PASSWORD`    | senha do Aiven                                     |
+| `DB_NAME`        | `pittapong`                                        |
+| `DB_SSL`         | `true`                                             |
+| `DB_SSL_CA`      | conteúdo integral do `ca.pem` (valor multilinha)   |
+| `JWT_SECRET`     | segredo forte, **diferente** do usado localmente   |
+| `API_PUBLIC_URL` | URL pública do serviço, ex: `https://x.onrender.com` |
+| `CORS_ORIGIN`    | URL do front-end na Vercel                         |
+
+> `PORT` é injetada automaticamente pelo Render — não a configure manualmente.
+>
+> `API_PUBLIC_URL` só é conhecida após o primeiro deploy. Configure-a e faça um novo deploy
+> para que o Swagger UI passe a apontar para o ambiente publicado.
+
+### 3. Verificação pós-deploy
+
+1. `GET /api/status` → `200`
+2. `/api-docs` carrega e o seletor de servidor mostra a URL pública em primeiro lugar
+3. `GET /categorias` sem token → `401`
+4. Login em `/usuario/login`, **Authorize** no Swagger, `GET /categorias` → `200`
+5. Criar um registro e relistá-lo confirma a persistência no Aiven
 
 ---
 
